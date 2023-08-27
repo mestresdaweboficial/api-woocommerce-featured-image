@@ -1,0 +1,39 @@
+function get_featured_image_url_by_product_id( $atts ) {
+    $atts = shortcode_atts( array(
+        'product_id' => 0,
+    ), $atts, 'get_featured_image' );
+
+    // Substitua esses valores pelas suas credenciais e detalhes do produto
+    $consumer_key = 'ck_1b74f4f847c12097b06300591f3d444e5e948bb1';
+    $consumer_secret = 'cs_1177e6f48284bc6ea80e5cb3f9dc281e0a3e9457';
+
+    $product_id = $atts['product_id'];
+
+    // Construa a URL da API
+    $api_url = "https://polloimports.com.br/wp-json/wc/v3/products/$product_id";
+
+    // Crie os parâmetros de autenticação
+    $args = array(
+        'headers' => array(
+            'Authorization' => 'Basic ' . base64_encode( $consumer_key . ':' . $consumer_secret ),
+        ),
+    );
+
+    // Faz a chamada à API
+    $response = wp_remote_get( $api_url, $args );
+
+    // Verifica se a chamada foi bem-sucedida
+    if ( ! is_wp_error( $response ) && wp_remote_retrieve_response_code( $response ) === 200 ) {
+        $product_data = json_decode( wp_remote_retrieve_body( $response ), true );
+
+        // Resgata a URL da imagem destacada
+        if ( isset( $product_data['images'][0]['src'] ) ) {
+            return "<img src=".$product_data['images'][0]['src']." />";
+        } else {
+            return "O produto não possui imagem destacada.";
+        }
+    } else {
+        return "Não foi possível obter os detalhes do produto.";
+    }
+}
+add_shortcode( 'get_featured_image', 'get_featured_image_url_by_product_id' );
